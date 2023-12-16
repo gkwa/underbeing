@@ -1,8 +1,8 @@
 package underbeing
 
 import (
-	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/cli/go-gh/v2"
@@ -11,17 +11,16 @@ import (
 	optmod "github.com/taylormonacelli/underbeing/options"
 )
 
-func Main(options *optmod.Options) int {
-	flag.Parse()
-
-	if err := run(options); err != nil {
+func Main(opts *optmod.Options) int {
+	err := run(opts)
+	if err != nil {
 		fmt.Println("Error:", err)
 		return 1
 	}
 	return 0
 }
 
-func run(options *optmod.Options) error {
+func run(opts *optmod.Options) error {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
@@ -33,14 +32,14 @@ func run(options *optmod.Options) error {
 	}
 
 	if isGitRepo {
-		fmt.Println("The current directory is a Git-initialized directory.")
+		slog.Debug("the current directory is a Git-initialized directory", "path", currentDir)
 	} else {
-		fmt.Println("The current directory is not a Git-initialized directory.")
+		return fmt.Errorf("the current directory is not a Git-initialized directory")
 	}
 
-	err = createGitHubRepo(options.GithubUser, "your-repo-name")
+	err = createOrUpdateGitHubRepo(opts.GithubUser, "your-repo-name")
 	if err != nil {
-		return fmt.Errorf("failed to create GitHub repository: %w", err)
+		return fmt.Errorf("failed to create or update GitHub repository: %w", err)
 	}
 
 	return nil
@@ -66,19 +65,44 @@ func isGitRepository(dir string) (bool, error) {
 	return true, nil
 }
 
-func createGitHubRepo(username, repoName string) error {
+func createOrUpdateGitHubRepo(username, repoName string) error {
 	if username == "" {
 		username = os.Getenv("GITHUB_USER")
 	}
 
-	args := []string{"repo", "create", username + "/" + repoName, "--public"}
-	stdOut, stdErr, err := gh.Exec(args...)
+	exists, err := checkGitHubRepoExists(username, repoName)
 	if err != nil {
-		return fmt.Errorf("failed to execute gh command: %w\n%s", err, stdErr.String())
+		return fmt.Errorf("failed to check GitHub repository existence: %w", err)
 	}
 
-	fmt.Println(stdOut.String())
-	fmt.Println(stdErr.String())
+	if exists {
+		fmt.Printf("the GitHub repository '%s/%s' already exists.\n", username, repoName)
+	} else {
+		args := []string{"repo", "create", username + "/" + repoName, "--public"}
+		stdOut, stdErr, err := gh.Exec(args...)
+		if err != nil {
+			return fmt.Errorf("failed to execute gh command: %w\n%s", err, stdErr.String())
+		}
+
+		slog.Debug("repo create", "stdout", stdOut.String())
+		slog.Error("repo create", "stderr", stdErr.String())
+		fmt.Printf("GitHub repository '%s/%s' created successfully.\n", username, repoName)
+	}
 
 	return nil
+}
+
+func checkGitHubRepoExists(username, repoName string) (bool, error) {
+	args := []string{"repo", "view", username + "/" + repoName}
+	stdOut, _, err := gh.Exec(args...)
+
+	if err != nil && stdOut.String() == "Error: Not Found\n" {
+		return false, nil
+	}
+
+	if err != nil {
+		return false, fmt.Errorf("failed to execute gh command: %w", err)
+	}
+
+	return true, nil
 }

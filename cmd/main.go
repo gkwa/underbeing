@@ -6,11 +6,11 @@ import (
 
 	"github.com/taylormonacelli/goldbug"
 	"github.com/taylormonacelli/underbeing"
-	"github.com/taylormonacelli/underbeing/options"
+	optmod "github.com/taylormonacelli/underbeing/options"
 )
 
 func main() {
-	opts := options.ParseOptions()
+	opts := optmod.ParseOptions()
 
 	if opts.Verbose || opts.LogFormat != "" {
 		if opts.LogFormat == "json" {
