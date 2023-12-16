@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/cli/go-gh/v2"
 	"github.com/go-git/go-git/v5"
@@ -37,11 +39,19 @@ func run(opts *optmod.Options) error {
 		return fmt.Errorf("the current directory is not a Git-initialized directory")
 	}
 
-	err = createOrUpdateGitHubRepo(opts.GithubUser, "your-repo-name")
-	if err != nil {
-		return fmt.Errorf("failed to create or update GitHub repository: %w", err)
+	repoName := opts.RepoName
+	if repoName == "" {
+		// Use the current directory name as the repository name
+		_, repoName = filepath.Split(currentDir)
 	}
 
+	slog.Debug("debug reponame", "repo", repoName)
+
+	err = createOrUpdateGitHubRepo(opts.GithubUser, repoName)
+	if err != nil {
+		slog.Error("createOrUpdateGitHubRepo", "error", err)
+		return fmt.Errorf("failed to create or update GitHub repository: %w", err)
+	}
 	return nil
 }
 
@@ -72,6 +82,7 @@ func createOrUpdateGitHubRepo(username, repoName string) error {
 
 	exists, err := checkGitHubRepoExists(username, repoName)
 	if err != nil {
+		slog.Error("checkGitHubRepoExists", "error", err)
 		return fmt.Errorf("failed to check GitHub repository existence: %w", err)
 	}
 
@@ -81,11 +92,12 @@ func createOrUpdateGitHubRepo(username, repoName string) error {
 		args := []string{"repo", "create", username + "/" + repoName, "--public"}
 		stdOut, stdErr, err := gh.Exec(args...)
 		if err != nil {
+			slog.Error("repo create", "username", username, "repo", repoName)
 			return fmt.Errorf("failed to execute gh command: %w\n%s", err, stdErr.String())
 		}
 
 		slog.Debug("repo create", "stdout", stdOut.String())
-		slog.Error("repo create", "stderr", stdErr.String())
+		slog.Debug("repo create", "stderr", stdErr.String())
 		fmt.Printf("GitHub repository '%s/%s' created successfully.\n", username, repoName)
 	}
 
@@ -94,9 +106,17 @@ func createOrUpdateGitHubRepo(username, repoName string) error {
 
 func checkGitHubRepoExists(username, repoName string) (bool, error) {
 	args := []string{"repo", "view", username + "/" + repoName}
-	stdOut, _, err := gh.Exec(args...)
+	stdOut, stdErr, err := gh.Exec(args...)
 
 	if err != nil && stdOut.String() == "Error: Not Found\n" {
+		return false, nil
+	}
+
+	// FIXME: use github response code instead if there is one
+	errStr := fmt.Sprintf("Could not resolve to a Repository with the name '%s'",
+		fmt.Sprintf("%s/%s", username, repoName),
+	)
+	if strings.Contains(stdErr.String(), errStr) {
 		return false, nil
 	}
 
