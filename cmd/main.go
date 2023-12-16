@@ -1,35 +1,24 @@
 package main
 
 import (
-	"flag"
 	"log/slog"
 	"os"
 
 	"github.com/taylormonacelli/goldbug"
 	"github.com/taylormonacelli/underbeing"
-)
-
-var (
-	verbose   bool
-	logFormat string
+	"github.com/taylormonacelli/underbeing/options"
 )
 
 func main() {
-	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
-	flag.BoolVar(&verbose, "v", false, "Enable verbose output (shorthand)")
+	opts := options.ParseOptions()
 
-	flag.StringVar(&logFormat, "log-format", "", "Log format (text or json)")
-
-	flag.Parse()
-
-	if verbose || logFormat != "" {
-		if logFormat == "json" {
+	if opts.Verbose || opts.LogFormat != "" {
+		if opts.LogFormat == "json" {
 			goldbug.SetDefaultLoggerJson(slog.LevelDebug)
 		} else {
 			goldbug.SetDefaultLoggerText(slog.LevelDebug)
 		}
 	}
-
-	code := underbeing.Main()
+	code := underbeing.Main(opts)
 	os.Exit(code)
 }
