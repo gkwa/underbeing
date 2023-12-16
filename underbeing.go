@@ -11,6 +11,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	optmod "github.com/taylormonacelli/underbeing/options"
 )
 
@@ -48,18 +49,97 @@ func run(opts *optmod.Options) error {
 
 	slog.Debug("debug reponame", "repo", repoName)
 
-	err = createOrUpdateGitHubRepo(opts.GithubUser, repoName)
+	var username string
+	username = opts.GithubUser
+	if username == "" {
+		username = os.Getenv("GITHUB_USER")
+		if username == "" {
+			return fmt.Errorf("username is empty")
+		}
+	}
+
+	err = createOrUpdateGitHubRepo(username, repoName)
 	if err != nil {
 		slog.Error("createOrUpdateGitHubRepo", "error", err)
 		return fmt.Errorf("failed to create or update GitHub repository: %w", err)
 	}
 
-	err = addGitRemote(opts.GithubUser, repoName)
+	err = addGitRemote(username, repoName)
 	if err != nil {
 		slog.Error("addGitRemote", "error", err)
 		return fmt.Errorf("failed to add Git remote: %w", err)
 	}
 
+	slog.Debug("check githubuser", "githubuser", username)
+
+	err = pushToRemote(username, repoName)
+	if err != nil {
+		slog.Error("pushToRemote", "error", err)
+		return fmt.Errorf("failed to push changes to remote: %w", err)
+	}
+
+	return nil
+}
+
+func pushToRemote(username, repoName string) error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	repo, err := git.PlainOpen(currentDir)
+	if err != nil {
+		return fmt.Errorf("failed to open Git repository: %w", err)
+	}
+
+	// Get the current branch
+	headRef, err := repo.Head()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD reference: %w", err)
+	}
+
+	// Get the remote URL from the local Git repository
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return fmt.Errorf("failed to get remote 'origin': %w", err)
+	}
+
+	remoteURLs := remote.Config().URLs
+	if len(remoteURLs) == 0 {
+		return fmt.Errorf("remote 'origin' has no URLs configured")
+	}
+
+	// Use the first URL as the remote URL
+	remoteURL := remoteURLs[0]
+
+	// expect: master:master
+	refspec := gitconfig.RefSpec(headRef.Name().Short() + ":" + headRef.Name().Short())
+	slog.Debug("refspec debug", "refspec", refspec)
+
+	remoteConfig := &gitconfig.RemoteConfig{
+		Name: "origin",
+		URLs: []string{remoteURL},
+	}
+
+	// Set up SSH authentication for pushing to the remote repository
+	auth, err := ssh.NewSSHAgentAuth(username)
+	if err != nil {
+		return fmt.Errorf("failed to set up SSH authentication: %w", err)
+	}
+
+	// Set up the push options
+	pushOptions := &git.PushOptions{
+		RemoteName: remoteConfig.Name,
+		RefSpecs:   []gitconfig.RefSpec{gitconfig.RefSpec(fmt.Sprintf("%s:%s", headRef.Name(), headRef.Name()))},
+		Auth:       auth,
+	}
+
+	err = repo.Push(pushOptions)
+	if err != nil {
+		return fmt.Errorf("failed to push changes to remote: %w", err)
+	}
+
+	fmt.Printf("Changes pushed to remote 'origin' and upstream branch set to '%s'.\n", headRef.Name())
 	return nil
 }
 
@@ -84,10 +164,6 @@ func isGitRepository(dir string) (bool, error) {
 }
 
 func createOrUpdateGitHubRepo(username, repoName string) error {
-	if username == "" {
-		username = os.Getenv("GITHUB_USER")
-	}
-
 	exists, err := checkGitHubRepoExists(username, repoName)
 	if err != nil {
 		slog.Error("checkGitHubRepoExists", "error", err)
@@ -120,6 +196,8 @@ func checkGitHubRepoExists(username, repoName string) (bool, error) {
 		return false, nil
 	}
 
+	slog.Debug("gh.Exec() returns stderr string", "stderr", stdErr.String())
+
 	// FIXME: use github response code instead if there is one
 	errStr := fmt.Sprintf("Could not resolve to a Repository with the name '%s'",
 		fmt.Sprintf("%s/%s", username, repoName),
@@ -151,6 +229,8 @@ func addGitRemote(username, repoName string) error {
 		Name: "origin",
 		URLs: []string{remoteURL},
 	})
+
+	slog.Debug("remote url", "remoteURL", remoteURL)
 
 	if err != nil {
 		return fmt.Errorf("failed to add Git remote: %w", err)
