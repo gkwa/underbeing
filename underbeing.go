@@ -9,6 +9,7 @@ import (
 
 	"github.com/cli/go-gh/v2"
 	"github.com/go-git/go-git/v5"
+	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	optmod "github.com/taylormonacelli/underbeing/options"
 )
@@ -52,6 +53,13 @@ func run(opts *optmod.Options) error {
 		slog.Error("createOrUpdateGitHubRepo", "error", err)
 		return fmt.Errorf("failed to create or update GitHub repository: %w", err)
 	}
+
+	err = addGitRemote(opts.GithubUser, repoName)
+	if err != nil {
+		slog.Error("addGitRemote", "error", err)
+		return fmt.Errorf("failed to add Git remote: %w", err)
+	}
+
 	return nil
 }
 
@@ -125,4 +133,29 @@ func checkGitHubRepoExists(username, repoName string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func addGitRemote(username, repoName string) error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	repo, err := git.PlainOpen(currentDir)
+	if err != nil {
+		return fmt.Errorf("failed to open Git repository: %w", err)
+	}
+
+	remoteURL := fmt.Sprintf("git@github.com:%s/%s.git", username, repoName)
+	_, err = repo.CreateRemote(&gitconfig.RemoteConfig{
+		Name: "origin",
+		URLs: []string{remoteURL},
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to add Git remote: %w", err)
+	}
+
+	fmt.Printf("Git remote 'origin' added successfully with URL: %s\n", remoteURL)
+	return nil
 }
