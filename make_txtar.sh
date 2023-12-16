@@ -5,15 +5,14 @@ rm -f /tmp/filelist.txt
 
 {
     rg --files . \
-        | grep -v underbeing \
+        | grep -vE underbeing$ \
         | grep -v README.org \
         | grep -v make_txtar.sh \
         | grep -v go.sum \
         | grep -v go.mod \
         | grep -v Makefile \
-        | grep -v stack.go \
-        # | grep -v options/options.go \
-        # | grep -v cmd/main.go \
+        | grep -v options/options.go \
+        | grep -v cmd/main.go \
         # | grep -v underbeing.go \
 
 } | tee /tmp/filelist.txt
