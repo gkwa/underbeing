@@ -171,7 +171,12 @@ func createOrUpdateGitHubRepo(username, repoName string) error {
 	}
 
 	if exists {
-		fmt.Printf("the GitHub repository '%s/%s' already exists.\n", username, repoName)
+		remoteURL, err := getRemoteOriginURL(".")
+		if err != nil {
+			return err
+		}
+
+		slog.Error("the GitHub repository already exists", "repo", remoteURL)
 	} else {
 		args := []string{"repo", "create", username + "/" + repoName, "--public"}
 		stdOut, stdErr, err := gh.Exec(args...)
@@ -238,4 +243,27 @@ func addGitRemote(username, repoName string) error {
 
 	fmt.Printf("Git remote 'origin' added successfully with URL: %s\n", remoteURL)
 	return nil
+}
+
+func getRemoteOriginURL(dir string) (string, error) {
+	currentDir := "."
+
+	repo, err := git.PlainOpen(currentDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to open Git repository: %w", err)
+	}
+
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return "", fmt.Errorf("failed to get remote 'origin': %w", err)
+	}
+
+	remoteURLs := remote.Config().URLs
+	if len(remoteURLs) == 0 {
+		return "", fmt.Errorf("remote 'origin' has no URLs configured")
+	}
+
+	remoteURL := remoteURLs[0]
+
+	return remoteURL, nil
 }
