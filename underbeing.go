@@ -11,7 +11,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	optmod "github.com/taylormonacelli/underbeing/options"
 )
 
@@ -112,17 +111,10 @@ func pushToRemote(username, repoName string) error {
 		URLs: []string{remoteURL},
 	}
 
-	// Set up SSH authentication for pushing to the remote repository
-	auth, err := ssh.NewSSHAgentAuth(username)
-	if err != nil {
-		return fmt.Errorf("failed to set up SSH authentication: %w", err)
-	}
-
 	// Set up the push options
 	pushOptions := &git.PushOptions{
 		RemoteName: remoteConfig.Name,
 		RefSpecs:   []gitconfig.RefSpec{gitconfig.RefSpec(fmt.Sprintf("%s:%s", headRef.Name(), headRef.Name()))},
-		Auth:       auth,
 	}
 
 	err = repo.Push(pushOptions)
