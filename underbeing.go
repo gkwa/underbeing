@@ -98,19 +98,10 @@ func pushToRemote(username, repoName string) error {
 		return fmt.Errorf("failed to get HEAD reference: %w", err)
 	}
 
-	// Get the remote URL from the local Git repository
-	remote, err := repo.Remote("origin")
+	remoteURL, err := getRemoteOriginURL(currentDir)
 	if err != nil {
-		return fmt.Errorf("failed to get remote 'origin': %w", err)
+		return err
 	}
-
-	remoteURLs := remote.Config().URLs
-	if len(remoteURLs) == 0 {
-		return fmt.Errorf("remote 'origin' has no URLs configured")
-	}
-
-	// Use the first URL as the remote URL
-	remoteURL := remoteURLs[0]
 
 	// expect: master:master
 	refspec := gitconfig.RefSpec(headRef.Name().Short() + ":" + headRef.Name().Short())

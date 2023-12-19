@@ -11,8 +11,8 @@ rm -f /tmp/filelist.txt
         | grep -v go.sum \
         | grep -v go.mod \
         | grep -v Makefile \
-        | grep -v options/options.go \
-        | grep -v cmd/main.go \
+        # | grep -v options/options.go \
+        # | grep -v cmd/main.go \
         # | grep -v underbeing.go \
 
 } | tee /tmp/filelist.txt
