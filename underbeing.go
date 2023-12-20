@@ -116,7 +116,7 @@ func pushToRemote(username, repoName string) error {
 		return fmt.Errorf("failed to push changes to remote: %w", err)
 	}
 
-	fmt.Printf("Changes pushed to remote 'origin' and upstream branch set to '%s'.\n", headRef.Name())
+	slog.Debug("changes pushed to remote 'origin' and upstream branch set", "branch", headRef.Name())
 	return nil
 }
 
@@ -218,7 +218,7 @@ func addGitRemote(username, repoName string) error {
 		return fmt.Errorf("failed to add Git remote: %w", err)
 	}
 
-	fmt.Printf("Git remote 'origin' added successfully with URL: %s\n", remoteURL)
+	slog.Debug("git remote 'origin' added", "url", remoteURL)
 	return nil
 }
 
