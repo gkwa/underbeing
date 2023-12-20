@@ -12,6 +12,7 @@ import (
 	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	optmod "github.com/taylormonacelli/underbeing/options"
+	"gopkg.in/ini.v1"
 )
 
 func Main(opts *optmod.Options) int {
@@ -77,12 +78,40 @@ func run(opts *optmod.Options) error {
 
 	slog.Debug("check githubuser", "githubuser", username)
 
+	if err := setPushDefaultToCurrent(currentDir); err != nil {
+		slog.Error("setPushDefaultToCurrent", "error", err)
+	}
+
 	err = pushToRemote(username, repoName)
 	if err != nil {
 		slog.Error("pushToRemote", "error", err)
 		return fmt.Errorf("failed to push changes to remote: %w", err)
 	}
 
+	return nil
+}
+
+func setPushDefaultToCurrent(repoPath string) error {
+	cfg, err := ini.Load(".git/config")
+	if err != nil {
+		slog.Error("Failed to load config file: %v", err)
+	}
+
+	pushDefault := cfg.Section("push").Key("default").String()
+
+	if pushDefault != "" {
+		return nil
+	}
+
+	cfg.Section("push").Key("default").SetValue("current")
+
+	err = cfg.SaveTo(".git/config")
+	if err != nil {
+		slog.Error("Failed to save config file: %v", err)
+		return err
+	}
+
+	slog.Debug("reading .git/config", "push.default", pushDefault)
 	return nil
 }
 
