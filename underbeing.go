@@ -249,12 +249,7 @@ func addGitRemote(username, repoName string) error {
 		return fmt.Errorf("failed to open Git repository: %w", err)
 	}
 
-	remote, err := repo.Remote("origin")
-	if err != nil {
-		slog.Error("repo.Remote2", "error", err)
-	}
-
-	if remote != nil {
+	if _, err := repo.Remote("origin"); err == nil {
 		return nil
 	}
 
