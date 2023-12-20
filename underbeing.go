@@ -57,6 +57,12 @@ func run(opts *optmod.Options) error {
 		}
 	}
 
+	err = addGitRemote(username, repoName)
+	if err != nil {
+		slog.Error("addGitRemote", "error", err)
+		return fmt.Errorf("failed to add Git remote: %w", err)
+	}
+
 	err = createOrUpdateGitHubRepo(username, repoName)
 	if err != nil {
 		slog.Error("createOrUpdateGitHubRepo", "error", err)
@@ -156,6 +162,7 @@ func createOrUpdateGitHubRepo(username, repoName string) error {
 	if exists {
 		remoteURL, err := getRemoteOriginURL(".")
 		if err != nil {
+			slog.Error("getRemoteOriginURL", "error", err)
 			return err
 		}
 
@@ -209,7 +216,17 @@ func addGitRemote(username, repoName string) error {
 
 	repo, err := git.PlainOpen(currentDir)
 	if err != nil {
+		slog.Error("git.PlainOpen", "repo", repo, "error", err)
 		return fmt.Errorf("failed to open Git repository: %w", err)
+	}
+
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		slog.Error("repo.Remote2", "error", err)
+	}
+
+	if remote != nil {
+		return nil
 	}
 
 	remoteURL := fmt.Sprintf("git@github.com:%s/%s.git", username, repoName)
@@ -221,7 +238,8 @@ func addGitRemote(username, repoName string) error {
 	slog.Debug("remote url", "remoteURL", remoteURL)
 
 	if err != nil {
-		return fmt.Errorf("failed to add Git remote: %w", err)
+		slog.Debug("hello", "hello", "hello")
+		// return fmt.Errorf("failed to add Git remote: %w", err)
 	}
 
 	slog.Debug("git remote 'origin' added", "url", remoteURL)
@@ -238,6 +256,7 @@ func getRemoteOriginURL(dir string) (string, error) {
 
 	remote, err := repo.Remote("origin")
 	if err != nil {
+		slog.Error("repo.Remote1", "error", err)
 		return "", fmt.Errorf("failed to get remote 'origin': %w", err)
 	}
 
