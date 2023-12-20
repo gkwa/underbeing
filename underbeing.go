@@ -63,6 +63,12 @@ func run(opts *optmod.Options) error {
 		return fmt.Errorf("failed to create or update GitHub repository: %w", err)
 	}
 
+	err = addGitRemote(username, repoName)
+	if err != nil {
+		slog.Error("addGitRemote", "error", err)
+		return fmt.Errorf("failed to add Git remote: %w", err)
+	}
+
 	slog.Debug("check githubuser", "githubuser", username)
 
 	err = pushToRemote(username, repoName)
