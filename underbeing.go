@@ -170,7 +170,7 @@ func createOrUpdateGitHubRepo(username, repoName string) error {
 
 		slog.Debug("repo create", "stdout", stdOut.String())
 		slog.Debug("repo create", "stderr", stdErr.String())
-		fmt.Printf("GitHub repository '%s/%s' created successfully.\n", username, repoName)
+		slog.Debug("gitHub repository created", "repo", username+"/"+repoName)
 	}
 
 	return nil
