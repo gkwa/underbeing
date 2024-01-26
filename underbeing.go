@@ -30,7 +30,7 @@ func run(opts *optmod.Options) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	isGitRepo, err := isGitRepository(repoPath)
+	isGitRepo, err := IsGitRepository(repoPath)
 	if err != nil {
 		return fmt.Errorf("failed to check Git repository: %w", err)
 	}
@@ -161,7 +161,7 @@ func pushToRemote(username, repoName string) error {
 	return nil
 }
 
-func isGitRepository(dir string) (bool, error) {
+func IsGitRepository(dir string) (bool, error) {
 	repo, err := git.PlainOpen(dir)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
