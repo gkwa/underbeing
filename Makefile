@@ -1,36 +1,67 @@
 BIN := underbeing
 
-GOPATH := $(shell go env GOPATH)
+SRC := $(wildcard *.go **/*.go)
 
-ifeq ($(OS),Windows_NT)
-    GO_FILES := $(shell dir /S /B *.go)
-    GO_DEPS := $(shell dir /S /B go.mod go.sum)
-    CLEAN := del
-else
-    GO_FILES := $(shell find . -name '*.go')
-    GO_DEPS := $(shell find . -name go.mod -o -name go.sum)
-    CLEAN := rm -f
-endif
+DATE := $(shell date +"%Y-%m-%dT%H:%M:%SZ")
+GOVERSION := $(shell go version)
+VERSION := $(shell git describe --tags --abbrev=8 --dirty --always --long)
+SHORT_SHA := $(shell git rev-parse --short HEAD)
+FULL_SHA := $(shell git rev-parse HEAD)
 
-$(BIN): $(GO_FILES) $(GO_DEPS)
-	$(MAKE) pretty
+export GOVERSION # goreleaser wants this
+
+PREFIX := github.com/taylormonacelli/underbeing/version
+LDFLAGS = -s -w
+LDFLAGS += -X $(PREFIX).Version=$(VERSION)
+LDFLAGS += -X '$(PREFIX).Date=$(DATE)'
+LDFLAGS += -X '$(PREFIX).GoVersion=$(GOVERSION)'
+LDFLAGS += -X $(PREFIX).ShortGitSHA=$(SHORT_SHA)
+LDFLAGS += -X $(PREFIX).FullGitSHA=$(FULL_SHA)
+
+.DEFAULT_GOAL := iterate
+
+all: check $(BIN) install
+
+.PHONY: iterate # lint and rebuild
+iterate: check $(BIN)
+
+.PHONY: check # lint and vet
+check: tidy fmt lint vet
+
+.PHONY: build # build
+build: $(BIN)
+
+$(BIN): $(SRC)
+	go build -ldflags "$(LDFLAGS)" -o $@ cmd/main.go
+
+.PHONY: goreleaser # run goreleaser
+goreleaser:
+	goreleaser --clean
+
+.PHONY: tidy # go tidy
+tidy:
+	go mod tidy
+
+.PHONY: fmt # go fmt
+fmt:
+	gofumpt -w .
+
+.PHONY: lint # lint
+lint:
+	golangci-lint run
+
+.PHONY: vet # go vet
+vet:
 	go vet ./...
-	go build -o $(BIN) cmd/main.go
 
-.PHONY: test
-test: $(BIN)
-	./$(BIN) --verbose
+.PHONY: install # go install
+install: $(BIN)
+	go install
 
-.PHONY: pretty
-pretty: $(GO_FILES)
-	gofumpt -w $^
+.PHONY: help # show makefile rules
+help:
+	@grep '^.PHONY: .* #' Makefile | sed 's/\.PHONY: \(.*\) # \(.*\)/\1	\2/' | expand -t20
 
-.PHONY: install
-install: $(GOPATH)/bin/$(BIN)
-
-$(GOPATH)/bin/$(BIN): $(BIN)
-	mv $(BIN) $(GOPATH)/bin/$(BIN)
-
-.PHONY: clean
+.PHONY: clean # clean bin
 clean:
-	$(CLEAN) $(BIN)
+	$(RM) $(BIN)

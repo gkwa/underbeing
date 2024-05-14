@@ -7,6 +7,7 @@ type Options struct {
 	LogFormat  string
 	GithubUser string
 	RepoName   string
+	Version    bool
 }
 
 func ParseOptions() *Options {
@@ -14,6 +15,8 @@ func ParseOptions() *Options {
 
 	flag.BoolVar(&opts.Verbose, "verbose", false, "Enable verbose output")
 	flag.BoolVar(&opts.Verbose, "v", false, "Enable verbose output (shorthand)")
+
+	flag.BoolVar(&opts.Version, "version", false, "Display version")
 
 	flag.StringVar(&opts.LogFormat, "log-format", "", "Log format (text or json)")
 

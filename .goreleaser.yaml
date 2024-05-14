@@ -14,6 +14,13 @@ builds:
   - amd64
   binary: underbeing
   id: underbeing
+  ldflags:
+  - -s -w
+    -X "github.com/taylormonacelli/underbeing/version.Version={{ .Version }}"
+    -X "github.com/taylormonacelli/underbeing/version.Date={{ .CommitDate }}"
+    -X "github.com/taylormonacelli/underbeing/version.GoVersion={{ .Env.GOVERSION }}"
+    -X "github.com/taylormonacelli/underbeing/version.ShortGitSHA={{ .ShortCommit }}"
+    -X "github.com/taylormonacelli/underbeing/version.FullGitSHA={{ .FullCommit }}"
 archives:
 - format: tar.gz
   name_template: |-
@@ -36,3 +43,20 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+brews:
+- name: underbeing
+  directory: Formula
+  homepage: https://github.com/taylormonacelli/underbeing
+  repository:
+    owner: taylormonacelli
+    name: homebrew-tools
+    branch: main
+scoops:
+- name: underbeing
+  homepage: https://github.com/taylormonacelli/underbeing
+  description: "Description of the underbeing project"
+  license: MIT
+  repository:
+    owner: taylormonacelli
+    name: scoop-bucket
+    branch: main
