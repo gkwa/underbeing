@@ -3,7 +3,7 @@ module github.com/taylormonacelli/underbeing
 go 1.21.1
 
 require (
-	github.com/cli/go-gh/v2 v2.9.0
+	github.com/cli/go-gh/v2 v2.11.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/magefile/mage v1.15.0
 	github.com/taylormonacelli/goldbug v0.0.6
