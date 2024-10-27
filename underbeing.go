@@ -94,7 +94,7 @@ func run(opts *optmod.Options) error {
 func setPushDefaultToCurrent(repoPath string) error {
 	cfg, err := ini.Load(".git/config")
 	if err != nil {
-		slog.Error("Failed to load config file: %v", err)
+		slog.Error("failed to load config file", "error", err)
 	}
 
 	pushDefault := cfg.Section("push").Key("default").String()
@@ -107,7 +107,7 @@ func setPushDefaultToCurrent(repoPath string) error {
 
 	err = cfg.SaveTo(".git/config")
 	if err != nil {
-		slog.Error("Failed to save config file: %v", err)
+		slog.Error("failed to save config file", "error", err)
 		return err
 	}
 
