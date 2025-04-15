@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/cli/go-gh/v2 v2.12.0
-	github.com/go-git/go-git/v5 v5.15.0
+	github.com/go-git/go-git/v5 v5.16.0
 	github.com/magefile/mage v1.15.0
 	github.com/taylormonacelli/goldbug v0.0.6
 	gopkg.in/ini.v1 v1.67.0
