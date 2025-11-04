@@ -1,11 +1,11 @@
 module github.com/taylormonacelli/underbeing
 
-go 1.23.0
+go 1.25.0
 
 toolchain go1.25.3
 
 require (
-	github.com/cli/go-gh/v2 v2.12.2
+	github.com/cli/go-gh/v2 v2.13.0
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/magefile/mage v1.15.0
 	github.com/taylormonacelli/goldbug v0.0.6
