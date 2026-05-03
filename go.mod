@@ -9,7 +9,7 @@ require (
 	github.com/go-git/go-git/v5 v5.18.0
 	github.com/magefile/mage v1.17.2
 	github.com/taylormonacelli/goldbug v0.0.6
-	gopkg.in/ini.v1 v1.67.1
+	gopkg.in/ini.v1 v1.67.2
 )
 
 require (
