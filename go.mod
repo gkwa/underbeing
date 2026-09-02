@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.27.1
 
 require (
-	github.com/cli/go-gh/v2 v2.13.0
+	github.com/cli/go-gh/v2 v2.15.0
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/magefile/mage v1.17.2
 	github.com/taylormonacelli/goldbug v0.0.6
@@ -32,6 +32,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
